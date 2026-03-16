@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+
+# Airflow logs
+logs/
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+
+# Mac / Windows
+.DS_Store
+Thumbs.db
