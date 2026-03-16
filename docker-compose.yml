@@ -18,13 +18,13 @@ services:
       - postgres
     env_file:
       - .env
-    environment:
+    environment: &airflow-common-env
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
       AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api-server:8080/execution/
-      AIRFLOW__API_AUTH__JWT_SECRET: my-super-secret-jwt-key-123
+      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
     user: "${AIRFLOW_UID}:0"
-    volumes:
+    volumes: &airflow-common-volumes
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
@@ -51,16 +51,10 @@ services:
     env_file:
       - .env
     environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api-server:8080/execution/
-      AIRFLOW__API_AUTH__JWT_SECRET: my-super-secret-jwt-key-123
+      <<: *airflow-common-env
     user: "${AIRFLOW_UID}:0"
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./plugins:/opt/airflow/plugins
-      - ./config:/opt/airflow/config
+      <<: *airflow-common-volumes
     ports:
       - "8080:8080"
     command: api-server
@@ -76,10 +70,8 @@ services:
     env_file:
       - .env
     environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api-server:8080/execution/
-      AIRFLOW__API_AUTH__JWT_SECRET: my-super-secret-jwt-key-123
+      <<: *airflow-common-env
+    user: "${AIRFLOW_UID}:0"
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
@@ -99,16 +91,10 @@ services:
     env_file:
       - .env
     environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api-server:8080/execution/
-      AIRFLOW__API_AUTH__JWT_SECRET: my-super-secret-jwt-key-123
+      <<: *airflow-common-env
     user: "${AIRFLOW_UID}:0"
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./plugins:/opt/airflow/plugins
-      - ./config:/opt/airflow/config
+      <<: *airflow-common-volumes
     command: dag-processor
 
 volumes:
