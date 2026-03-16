@@ -73,8 +73,7 @@ services:
       - .env
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      AIRFLOW__API__BASE_URL: http://airflow-api-server:8080
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     user: "${AIRFLOW_UID}:0"
     volumes:
       - ./dags:/opt/airflow/dags
