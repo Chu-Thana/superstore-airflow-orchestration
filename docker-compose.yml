@@ -23,12 +23,14 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
       AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api-server:8080/execution/
       AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
+      PYTHONPATH: /opt/airflow
     user: "${AIRFLOW_UID}:0"
-    volumes: &airflow-common-volumes
+    volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
       - ./config:/opt/airflow/config
+      - ./scripts:/opt/airflow/scripts
     command: >
       bash -c "
       airflow db migrate &&
@@ -52,9 +54,14 @@ services:
       - .env
     environment:
       <<: *airflow-common-env
+      PYTHONPATH: /opt/airflow
     user: "${AIRFLOW_UID}:0"
     volumes:
-      <<: *airflow-common-volumes
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./config:/opt/airflow/config
+      - ./scripts:/opt/airflow/scripts
     ports:
       - "8080:8080"
     command: api-server
@@ -71,6 +78,7 @@ services:
       - .env
     environment:
       <<: *airflow-common-env
+      PYTHONPATH: /opt/airflow
     user: "${AIRFLOW_UID}:0"
     volumes:
       - ./dags:/opt/airflow/dags
@@ -92,9 +100,14 @@ services:
       - .env
     environment:
       <<: *airflow-common-env
+      PYTHONPATH: /opt/airflow
     user: "${AIRFLOW_UID}:0"
     volumes:
-      <<: *airflow-common-volumes
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./config:/opt/airflow/config
+      - ./scripts:/opt/airflow/scripts
     command: dag-processor
 
 volumes:
