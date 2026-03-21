@@ -27,6 +27,7 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       PYTHONPATH: /opt/airflow:/opt/airflow/scripts
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
     user: "${AIRFLOW_UID:-50000}:0"
     volumes: &airflow-common-volumes
       - ./dags:/opt/airflow/dags

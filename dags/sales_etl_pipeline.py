@@ -1,11 +1,9 @@
-from datetime import datetime
-
 from airflow.decorators import dag, task
-
+from datetime import datetime
+from scripts.notify import notify_success, notify_failure
 from scripts.extract import extract_sales_data
 from scripts.transform import transform_sales_data
 from scripts.load import load_sales_summary
-
 
 @dag(
     dag_id="sales_etl_pipeline",
@@ -15,8 +13,10 @@ from scripts.load import load_sales_summary
     catchup=False,
     tags=["etl", "airflow", "project4", "data-engineering"],
     default_args={
-        "retries": 2,
+        "retries": 0,
+        "on_failure_callback": notify_failure,
     },
+    on_success_callback=notify_success,
 )
 def sales_etl_pipeline():
     """
