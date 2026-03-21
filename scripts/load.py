@@ -1,16 +1,15 @@
+import pandas as pd
 from pathlib import Path
 
 
-def load_sales_summary() -> None:
+def load_sales_summary():
     data_dir = Path("/opt/airflow/data")
-    transformed_file = data_dir / "transformed_sales.txt"
-    final_file = data_dir / "sales_summary.txt"
 
-    if not transformed_file.exists():
-        raise FileNotFoundError(f"Missing input file: {transformed_file}")
+    input_file = data_dir / "sales_summary.parquet"
+    df = pd.read_parquet(input_file)
 
-    content = transformed_file.read_text(encoding="utf-8")
-    final_file.write_text(f"FINAL OUTPUT:\n{content}", encoding="utf-8")
+    output_file = data_dir / "final_output.csv"
+    df.to_csv(output_file, index=False)
 
-    print("Load step completed.")
-    print(f"Created file: {final_file}")
+    print("Load completed")
+    print(df.head())

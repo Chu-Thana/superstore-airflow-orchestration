@@ -10,27 +10,32 @@ services:
       - "5433:5432"
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   airflow-init:
-    image: ${AIRFLOW_IMAGE_NAME}
+    build: .
     container_name: airflow-init
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     env_file:
       - .env
     environment: &airflow-common-env
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api-server:8080/execution/
-      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
       PYTHONPATH: /opt/airflow
     user: "${AIRFLOW_UID}:0"
-    volumes:
+    volumes: &airflow-common-volumes
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
       - ./config:/opt/airflow/config
       - ./scripts:/opt/airflow/scripts
+      - ./data:/opt/airflow/data
     command: >
       bash -c "
       airflow db migrate &&
@@ -40,75 +45,63 @@ services:
       --firstname Airflow
       --lastname Admin
       --role Admin
-      --email admin@example.com
+      --email admin@example.com || true
       "
 
-  airflow-api-server:
-    image: ${AIRFLOW_IMAGE_NAME}
-    container_name: airflow-api-server
-    restart: always
+  airflow-dag-processor:
+    build: .
+    container_name: airflow-dag-processor
     depends_on:
-      - postgres
-      - airflow-init
+      postgres:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       <<: *airflow-common-env
-      PYTHONPATH: /opt/airflow
     user: "${AIRFLOW_UID}:0"
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./plugins:/opt/airflow/plugins
-      - ./config:/opt/airflow/config
-      - ./scripts:/opt/airflow/scripts
+    volumes: *airflow-common-volumes
+    command: >
+      bash -c "
+        airflow dag-processor
+      "
+
+  airflow-webserver:
+    build: .
+    container_name: airflow-webserver
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      <<: *airflow-common-env
+    user: "${AIRFLOW_UID}:0"
+    volumes: *airflow-common-volumes
     ports:
       - "8080:8080"
     command: api-server
 
   airflow-scheduler:
-    image: ${AIRFLOW_IMAGE_NAME}
+    build: .
     container_name: airflow-scheduler
     restart: always
     depends_on:
-      - postgres
-      - airflow-init
-      - airflow-api-server
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
     env_file:
       - .env
     environment:
       <<: *airflow-common-env
-      PYTHONPATH: /opt/airflow
     user: "${AIRFLOW_UID}:0"
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./plugins:/opt/airflow/plugins
-      - ./config:/opt/airflow/config
-      - ./scripts:/opt/airflow/scripts
-      - ./data:/opt/airflow/data
+    volumes: *airflow-common-volumes
     command: scheduler
-
-  airflow-dag-processor:
-    image: ${AIRFLOW_IMAGE_NAME}
-    container_name: airflow-dag-processor
-    restart: always
-    depends_on:
-      - postgres
-      - airflow-init
-    env_file:
-      - .env
-    environment:
-      <<: *airflow-common-env
-      PYTHONPATH: /opt/airflow
-    user: "${AIRFLOW_UID}:0"
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./plugins:/opt/airflow/plugins
-      - ./config:/opt/airflow/config
-      - ./scripts:/opt/airflow/scripts
-    command: dag-processor
 
 volumes:
   postgres-db-volume:
+
+  

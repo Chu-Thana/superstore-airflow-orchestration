@@ -1,12 +1,18 @@
 from pathlib import Path
+import pandas as pd
 
 
-def extract_sales_data() -> None:
-    output_dir = Path("/opt/airflow/data")
-    output_dir.mkdir(parents=True, exist_ok=True)
+def extract_sales_data():
+    data_dir = Path("/opt/airflow/data")
+    input_file = data_dir / "Superstore.csv"
 
-    raw_file = output_dir / "raw_sales.txt"
-    raw_file.write_text("raw sales data extracted\n", encoding="utf-8")
+    try:
+        df = pd.read_csv(input_file)
+    except UnicodeDecodeError:
+        df = pd.read_csv(input_file, encoding="latin1")
 
-    print("Extract step completed.")
-    print(f"Created file: {raw_file}")
+    output_file = data_dir / "sales_data.parquet"
+    df.to_parquet(output_file, index=False)
+
+    print(f"Extracted {len(df)} rows")
+    print(f"Saved to {output_file}")

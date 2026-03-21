@@ -1,16 +1,26 @@
+import pandas as pd
 from pathlib import Path
 
 
-def transform_sales_data() -> None:
+def transform_sales_data():
     data_dir = Path("/opt/airflow/data")
-    raw_file = data_dir / "raw_sales.txt"
-    transformed_file = data_dir / "transformed_sales.txt"
 
-    if not raw_file.exists():
-        raise FileNotFoundError(f"Missing input file: {raw_file}")
+    input_file = data_dir / "raw_sales.parquet"
+    df = pd.read_parquet(input_file)
 
-    content = raw_file.read_text(encoding="utf-8")
-    transformed_file.write_text(content.upper(), encoding="utf-8")
+    # ตัวอย่าง transform
+    df["Order Date"] = pd.to_datetime(df["Order Date"])
 
-    print("Transform step completed.")
-    print(f"Created file: {transformed_file}")
+    summary = (
+        df.groupby("Category")
+        .agg(
+            total_sales=("Sales", "sum"),
+            total_orders=("Order ID", "count"),
+        )
+        .reset_index()
+    )
+
+    output_file = data_dir / "sales_summary.parquet"
+    summary.to_parquet(output_file, index=False)
+
+    print("Transform completed")
