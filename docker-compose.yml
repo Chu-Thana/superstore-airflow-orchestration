@@ -17,91 +17,64 @@ services:
       retries: 5
 
   airflow-init:
-    build: .
+    image: apache/airflow:2.10.5
     container_name: airflow-init
     depends_on:
       postgres:
         condition: service_healthy
-    env_file:
-      - .env
     environment: &airflow-common-env
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      PYTHONPATH: /opt/airflow
-    user: "${AIRFLOW_UID}:0"
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      PYTHONPATH: /opt/airflow:/opt/airflow/scripts
+    user: "${AIRFLOW_UID:-50000}:0"
     volumes: &airflow-common-volumes
       - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./plugins:/opt/airflow/plugins
-      - ./config:/opt/airflow/config
       - ./scripts:/opt/airflow/scripts
       - ./data:/opt/airflow/data
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
     command: >
       bash -c "
       airflow db migrate &&
       airflow users create
-      --username ${_AIRFLOW_WWW_USER_USERNAME}
-      --password ${_AIRFLOW_WWW_USER_PASSWORD}
+      --username admin
+      --password admin
       --firstname Airflow
       --lastname Admin
       --role Admin
-      --email admin@example.com || true
-      "
-
-  airflow-dag-processor:
-    build: .
-    container_name: airflow-dag-processor
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      <<: *airflow-common-env
-    user: "${AIRFLOW_UID}:0"
-    volumes: *airflow-common-volumes
-    command: >
-      bash -c "
-        airflow dag-processor
+      --email admin@example.com
       "
 
   airflow-webserver:
-    build: .
+    image: apache/airflow:2.10.5
     container_name: airflow-webserver
-    restart: always
     depends_on:
       postgres:
         condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
-    env_file:
-      - .env
     environment:
       <<: *airflow-common-env
-    user: "${AIRFLOW_UID}:0"
+    user: "${AIRFLOW_UID:-50000}:0"
     volumes: *airflow-common-volumes
     ports:
       - "8080:8080"
-    command: api-server
+    command: webserver
 
   airflow-scheduler:
-    build: .
+    image: apache/airflow:2.10.5
     container_name: airflow-scheduler
-    restart: always
     depends_on:
       postgres:
         condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
-    env_file:
-      - .env
     environment:
       <<: *airflow-common-env
-    user: "${AIRFLOW_UID}:0"
+    user: "${AIRFLOW_UID:-50000}:0"
     volumes: *airflow-common-volumes
     command: scheduler
 
 volumes:
   postgres-db-volume:
-
-  

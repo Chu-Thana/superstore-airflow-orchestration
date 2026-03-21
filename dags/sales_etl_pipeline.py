@@ -1,10 +1,12 @@
 from datetime import datetime
+
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator
 
 from scripts.extract import extract_sales_data
 from scripts.transform import transform_sales_data
 from scripts.load import load_sales_summary
+
 
 dag = DAG(
     dag_id="sales_etl_pipeline",
@@ -12,6 +14,7 @@ dag = DAG(
     schedule="@daily",
     catchup=False,
 )
+
 
 extract_task = PythonOperator(
     task_id="extract_sales_data",

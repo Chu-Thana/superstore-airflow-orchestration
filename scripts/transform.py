@@ -3,13 +3,19 @@ from pathlib import Path
 
 
 def transform_sales_data():
-    data_dir = Path("/opt/airflow/data")
+    data_dir = Path("/opt/airflow/data/")
 
-    input_file = data_dir / "raw_sales.parquet"
+    input_file = data_dir / "sales_data.parquet"
     df = pd.read_parquet(input_file)
 
-    # ตัวอย่าง transform
-    df["Order Date"] = pd.to_datetime(df["Order Date"])
+    df["Order Date"] = pd.to_datetime(
+        df["Order Date"],
+        dayfirst=True,
+        errors="coerce"
+    )
+
+    bad_dates = df["Order Date"].isna().sum()
+    print(f"Invalid Order Date rows: {bad_dates}")
 
     summary = (
         df.groupby("Category")
