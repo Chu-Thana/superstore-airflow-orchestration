@@ -1,3 +1,4 @@
 pandas
 requests
 pyarrow
+psycopg2-binary

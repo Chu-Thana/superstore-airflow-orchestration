@@ -7,10 +7,13 @@ logs/
 
 # Environment
 .env
+venv/
+.venv/
 
 # IDE
 .idea/
 .vscode/
+logs/
 
 # Mac / Windows
 .DS_Store
@@ -21,3 +24,4 @@ data/*
 
 # But allow folder structure
 !data/.gitkeep
+
