@@ -3,16 +3,22 @@ from __future__ import annotations
 from pathlib import Path
 import pandas as pd
 import os
+import logging
 
 BASE_PATH = os.getenv("AIRFLOW_DATA_PATH", "/opt/airflow")
 
 INPUT_FILE = Path(BASE_PATH) / "data/processed/sales_events_cleaned.csv"
 OUTPUT_FILE = Path(BASE_PATH) / "data/warehouse/sales_summary_by_region.csv"
 
+logger = logging.getLogger(__name__)
+
 def load_staging_sales_summary() -> str:
     """
     Aggregate clean sales events into warehouse-ready regional summary.
     """
+
+    logger.info("Start load_staging_sales_summary")
+
     if not INPUT_FILE.exists():
         raise FileNotFoundError(f"Input file not found: {INPUT_FILE}")
 
@@ -34,7 +40,8 @@ def load_staging_sales_summary() -> str:
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     summary.to_csv(OUTPUT_FILE, index=False)
 
-    print(f"Loaded warehouse summary to {OUTPUT_FILE}")
+    logger.info(f"Loaded {len(df)} rows into warehouse")
+
     return str(OUTPUT_FILE)
 
 

@@ -3,16 +3,22 @@ import json
 from pathlib import Path
 import pandas as pd
 import os
+import logging
 
 BASE_PATH = os.getenv("AIRFLOW_DATA_PATH", "/opt/airflow")
 STAGING_FILE = Path(BASE_PATH) / "staging/staging_sales_events.jsonl"
 OUTPUT_FILE = Path(BASE_PATH) / "data/processed/sales_events_extracted.csv"
+
+logger = logging.getLogger(__name__)
 
 def extract_staging_sales() -> str:
     """
     Read raw JSONL events from staging and convert them to CSV for downstream tasks.
     Returns output file path.
     """
+
+    logger.info("Start extract_staging_sales")
+
     if not STAGING_FILE.exists():
         raise FileNotFoundError(f"Staging file not found: {STAGING_FILE}")
 
@@ -31,7 +37,8 @@ def extract_staging_sales() -> str:
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(OUTPUT_FILE, index=False)
 
-    print(f"Extracted {len(df)} rows to {OUTPUT_FILE}")
+    logger.info(f"Extracted {len(df)} rows")
+
     return str(OUTPUT_FILE)
 
 

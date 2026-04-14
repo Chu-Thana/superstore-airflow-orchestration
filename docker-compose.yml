@@ -32,7 +32,8 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       PYTHONPATH: /opt/airflow:/opt/airflow/scripts
       AIRFLOW_DATA_PATH: /opt/airflow
-      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
     user: "${AIRFLOW_UID:-50000}:0"
     volumes: &airflow-common-volumes
       - ./dags:/opt/airflow/dags

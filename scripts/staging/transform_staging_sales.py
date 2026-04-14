@@ -1,13 +1,15 @@
 from __future__ import annotations
-
 from pathlib import Path
 import pandas as pd
 import os
+import logging
 
 BASE_PATH = os.getenv("AIRFLOW_DATA_PATH", "/opt/airflow")
 
 INPUT_FILE = Path(BASE_PATH) / "data/processed/sales_events_extracted.csv"
 OUTPUT_FILE = Path(BASE_PATH) / "data/processed/sales_events_cleaned.csv"
+
+logger = logging.getLogger(__name__)
 
 def transform_staging_sales() -> str:
     """
@@ -17,10 +19,15 @@ def transform_staging_sales() -> str:
     - cast data types
     - keep only valid sales rows
     """
+
+    logger.info("Start transform_staging_sales")
+
     if not INPUT_FILE.exists():
+        logger.error(f"Input file not found: {INPUT_FILE}")
         raise FileNotFoundError(f"Input file not found: {INPUT_FILE}")
 
     df = pd.read_csv(INPUT_FILE)
+    logger.info(f"Loaded {len(df)} rows")
 
     required_cols = ["event_id", "order_id", "region", "sales", "event_time", "is_duplicate"]
     missing_cols = [col for col in required_cols if col not in df.columns]
@@ -36,9 +43,12 @@ def transform_staging_sales() -> str:
     df = df[df["is_duplicate"] == 0]
 
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    logger.info(f"After cleaning: {len(df)} rows")
+
     df.to_csv(OUTPUT_FILE, index=False)
 
-    print(f"Transformed {len(df)} clean rows to {OUTPUT_FILE}")
+    logger.info("Transform completed successfully")
     return str(OUTPUT_FILE)
 
 

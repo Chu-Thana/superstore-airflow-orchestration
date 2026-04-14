@@ -1,38 +1,47 @@
 import os
 import requests
 
-SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+
+def send_telegram_alert(message: str) -> None:
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        print("Telegram config is missing")
+        return
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+    }
+
+    response = requests.post(url, json=payload, timeout=10)
+    print("Telegram status:", response.status_code)
+    print("Telegram response:", response.text)
 
 
 def notify_success(context):
     dag_id = context["dag"].dag_id
     run_id = context["run_id"]
-    message = f"✅ SUCCESS: DAG {dag_id} completed (run_id={run_id})"
 
-    print("Sending success alert to Slack...")
-    print(message)
-
-    if SLACK_WEBHOOK_URL:
-        response = requests.post(
-            SLACK_WEBHOOK_URL,
-            json={"text": message},
-            timeout=10,
-        )
-        print("Slack status:", response.status_code)
+    message = (
+        f"✅ Airflow DAG Success\n"
+        f"DAG: {dag_id}\n"
+        f"Run ID: {run_id}"
+    )
+    send_telegram_alert(message)
 
 
-def notify_failure(context):
+def task_fail_alert(context):
     dag_id = context["dag"].dag_id
     task_id = context["task_instance"].task_id
-    message = f"❌ FAILURE: Task {task_id} in DAG {dag_id} failed"
+    run_id = context["run_id"]
 
-    print("Sending failure alert to Slack...")
-    print(message)
-
-    if SLACK_WEBHOOK_URL:
-        response = requests.post(
-            SLACK_WEBHOOK_URL,
-            json={"text": message},
-            timeout=10,
-        )
-        print("Slack status:", response.status_code)
+    message = (
+        f"❌ Airflow Task Failed\n"
+        f"DAG: {dag_id}\n"
+        f"Task: {task_id}\n"
+        f"Run ID: {run_id}"
+    )
+    send_telegram_alert(message)
