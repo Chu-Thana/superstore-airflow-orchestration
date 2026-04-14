@@ -31,6 +31,7 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       PYTHONPATH: /opt/airflow:/opt/airflow/scripts
+      AIRFLOW_DATA_PATH: /opt/airflow
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
     user: "${AIRFLOW_UID:-50000}:0"
     volumes: &airflow-common-volumes
@@ -39,6 +40,7 @@ services:
       - ./data:/opt/airflow/data
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
+      - ../project3_streaming/output/staging:/opt/airflow/staging
     command: >
       bash -c "
       airflow db migrate &&
