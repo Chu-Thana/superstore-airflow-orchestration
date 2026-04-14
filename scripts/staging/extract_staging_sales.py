@@ -17,7 +17,7 @@ def extract_staging_sales() -> str:
     Returns output file path.
     """
 
-    logger.info("Start extract_staging_sales")
+    logger.info(f"Reading staging file from {STAGING_FILE}")
 
     if not STAGING_FILE.exists():
         raise FileNotFoundError(f"Staging file not found: {STAGING_FILE}")

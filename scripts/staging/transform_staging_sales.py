@@ -29,6 +29,19 @@ def transform_staging_sales() -> str:
     df = pd.read_csv(INPUT_FILE)
     logger.info(f"Loaded {len(df)} rows")
 
+    expected_columns = {
+        "event_id",
+        "order_id",
+        "region",
+        "sales",
+        "event_time",
+        "is_duplicate",
+    }
+
+    missing_expected = expected_columns - set(df.columns)
+    if missing_expected:
+        raise ValueError(f"Schema mismatch. Missing columns: {sorted(missing_expected)}")
+
     required_cols = ["event_id", "order_id", "region", "sales", "event_time", "is_duplicate"]
     missing_cols = [col for col in required_cols if col not in df.columns]
     if missing_cols:
@@ -38,9 +51,24 @@ def transform_staging_sales() -> str:
     df["is_duplicate"] = pd.to_numeric(df["is_duplicate"], errors="coerce").fillna(1).astype(int)
     df["event_time"] = pd.to_datetime(df["event_time"], errors="coerce")
 
+    if (df["sales"] < 0).any():
+        raise ValueError("Negative sales detected")
+
+    if df["region"].isnull().any():
+        raise ValueError("Missing region detected")
+
+    raw_count = len(df)
+
     df = df.dropna(subset=["event_id", "order_id", "region", "sales", "event_time"])
     df = df[df["sales"] >= 0]
     df = df[df["is_duplicate"] == 0]
+
+    clean_count = len(df)
+    dropped_count = raw_count - clean_count
+
+    logger.info(f"Raw rows before cleaning: {raw_count}")
+    logger.info(f"Clean rows after cleaning: {clean_count}")
+    logger.info(f"Dropped rows during cleaning: {dropped_count}")
 
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 

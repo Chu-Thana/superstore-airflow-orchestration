@@ -24,8 +24,19 @@ def load_staging_sales_summary() -> str:
 
     df = pd.read_csv(INPUT_FILE)
 
+    expected_columns = {"region", "sales", "order_id", "event_id"}
+    missing_expected = expected_columns - set(df.columns)
+    if missing_expected:
+        raise ValueError(f"Schema mismatch. Missing columns: {sorted(missing_expected)}")
+
     if df.empty:
         raise ValueError("No clean rows available for summary.")
+
+    if (df["sales"] < 0).any():
+        raise ValueError("Negative sales detected in cleaned input")
+
+    if df["region"].isna().any():
+        raise ValueError("Missing region detected in cleaned input")
 
     summary = (
         df.groupby("region", as_index=False)
@@ -36,6 +47,9 @@ def load_staging_sales_summary() -> str:
         )
         .sort_values(by="total_sales", ascending=False)
     )
+
+    logger.info(f"Input clean rows: {len(df)}")
+    logger.info(f"Output summary rows: {len(summary)}")
 
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     summary.to_csv(OUTPUT_FILE, index=False)
