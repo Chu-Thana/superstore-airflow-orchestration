@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 import os
 import logging
+import boto3
 
 BASE_PATH = os.getenv("AIRFLOW_DATA_PATH", "/opt/airflow")
 
@@ -56,7 +57,19 @@ def load_staging_sales_summary() -> str:
 
     logger.info(f"Loaded {len(df)} rows into warehouse")
 
+    s3_bucket = "sales-analytics-lakehouse-thana"
+    s3_key = "gold/sales_summary_by_region.csv"
+
+    upload_to_s3(str(OUTPUT_FILE), s3_bucket, s3_key)
+
     return str(OUTPUT_FILE)
+
+def upload_to_s3(local_path: str, bucket: str, key: str):
+    s3 = boto3.client("s3")
+
+    s3.upload_file(local_path, bucket, key)
+
+    logger.info(f"Uploaded {local_path} to s3://{bucket}/{key}")
 
 
 if __name__ == "__main__":

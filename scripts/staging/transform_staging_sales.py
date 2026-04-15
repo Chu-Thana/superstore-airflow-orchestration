@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 import os
 import logging
+import boto3
 
 BASE_PATH = os.getenv("AIRFLOW_DATA_PATH", "/opt/airflow")
 
@@ -10,6 +11,11 @@ INPUT_FILE = Path(BASE_PATH) / "data/processed/sales_events_extracted.csv"
 OUTPUT_FILE = Path(BASE_PATH) / "data/processed/sales_events_cleaned.csv"
 
 logger = logging.getLogger(__name__)
+
+def upload_to_s3(local_path: str, bucket: str, key: str) -> None:
+    s3 = boto3.client("s3")
+    s3.upload_file(local_path, bucket, key)
+    logger.info(f"Uploaded {local_path} to s3://{bucket}/{key}")
 
 def transform_staging_sales() -> str:
     """
@@ -76,8 +82,21 @@ def transform_staging_sales() -> str:
 
     df.to_csv(OUTPUT_FILE, index=False)
 
+    SILVER_S3_BUCKET = "sales-analytics-lakehouse-thana"
+    SILVER_S3_KEY = "silver/sales_cleaned.csv"
+
+    upload_to_s3(
+        str(OUTPUT_FILE),
+        SILVER_S3_BUCKET,
+        SILVER_S3_KEY
+    )
+
+    logger.info(f"Uploaded silver dataset to s3://{SILVER_S3_BUCKET}/{SILVER_S3_KEY}")
+
     logger.info("Transform completed successfully")
     return str(OUTPUT_FILE)
+
+
 
 
 if __name__ == "__main__":
