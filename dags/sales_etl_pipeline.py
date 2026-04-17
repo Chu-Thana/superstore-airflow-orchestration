@@ -1,6 +1,6 @@
 from airflow.decorators import dag, task
 from datetime import datetime
-from scripts.notify import notify_success, notify_failure
+from scripts.notify import notify_success, task_fail_alert
 from scripts.extract import extract_sales_data
 from scripts.transform import transform_sales_data
 from scripts.load import load_sales_summary
@@ -14,7 +14,7 @@ from scripts.load import load_sales_summary
     tags=["etl", "airflow", "project4", "data-engineering"],
     default_args={
         "retries": 0,
-        "on_failure_callback": notify_failure,
+        "on_failure_callback": task_fail_alert,
     },
     on_success_callback=notify_success,
 )

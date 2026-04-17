@@ -42,7 +42,7 @@ services:
       - ./data:/opt/airflow/data
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ../project3_streaming/output/staging:/opt/airflow/staging
+      - /home/ubuntu/project3_streaming/output/staging:/opt/airflow/staging
       - ~/.aws:/home/airflow/.aws
     command: >
       bash -c "
