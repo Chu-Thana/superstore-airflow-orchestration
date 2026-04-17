@@ -2,240 +2,177 @@
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![Airflow](https://img.shields.io/badge/Orchestration-Airflow-orange)
-![Docker](https://img.shields.io/badge/Docker-Compose-blue)
-![Pandas](https://img.shields.io/badge/Data-Pandas-yellow)
-![Alerting](https://img.shields.io/badge/Alerts-Slack-red)
+![Docker](https://img.shields.io/badge/Container-Docker-blue)
+![AWS](https://img.shields.io/badge/Storage-S3-yellow)
+![Alerting](https://img.shields.io/badge/Alert-Telegram-green)
 
-A production-style batch data pipeline orchestrated using Apache Airflow, featuring modular ETL processing, fault tolerance, and real-time alerting via Slack Webhooks.
-
----
-
-# 🧠 Design Goals
-
-This project simulates a **production-grade batch data pipeline** used in modern data platforms.
-
-Key objectives:
-
-* Orchestrate ETL workflows using Apache Airflow
-* Design modular and reusable data processing components
-* Handle failures with retry and alert mechanisms
-* Implement observability through logging and alerts
-* Structure pipeline for containerized deployment
-* Integrate with upstream streaming concepts (Kafka)
+Production-style **batch data pipeline orchestration** using Apache Airflow with cloud storage (S3), Redshift integration, and real-time alerting.
 
 ---
 
-# 🚀 Tech Stack
+# 🚀 Overview
 
-* Python 3.12
-* Apache Airflow
-* Pandas
-* Docker & Docker Compose
-* PostgreSQL (Airflow metadata DB)
-* Slack Webhook (Alerting)
-* Git
+This project demonstrates a **production-like Airflow pipeline** designed to orchestrate ETL workflows on top of a data lake architecture.
 
----
+## 🔑 Highlights
 
-# Key Concepts Demonstrated
-
-This project demonstrates core data engineering concepts:
-
-* Workflow orchestration
-* Batch ETL processing
-* Task dependency management
-* Retry & failure handling
-* Observability & alerting
-* Containerized pipelines
-* Modular pipeline design
+- End-to-end ETL orchestration using Airflow DAGs
+- Medallion architecture (raw → silver → gold)
+- Integration with AWS S3 & Redshift
+- Fault-tolerant pipeline with retries
+- Real-time alerting via Telegram
+- Full observability (logs + DAG monitoring)
 
 ---
 
-# 📂 Project Structure
+# 🧠 Architecture
 
-```text
-project4_airflow_orchestration/
-│
-├── dags/
-│   ├── sales_etl_pipeline.py
-│   └── project1_etl_runner.py
-│
-├── scripts/
-│   ├── extract.py
-│   ├── transform.py
-│   ├── load.py
-│   └── notify.py
-│
-├── data/
-├── logs/
-│
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
-└── .gitignore
+![Data Lake](assets/airflow_s3_lakehouse.png)
+
+```
+Kafka (Project 3)
+      ↓
+S3 (raw)
+      ↓
+Airflow DAG (Project 4)
+      ↓
+ETL Processing
+      ↓
+S3 (silver / gold)
+      ↓
+Redshift (analytics-ready)
 ```
 
 ---
 
-# 🏗 Architecture Overview
-
-This pipeline orchestrates batch processing while conceptually integrating with upstream streaming systems.
-
-```text
-(Project 3 - Streaming Layer)
-Kafka → Consumer → Raw Data (Parquet / DB)
-
-                ↓
-
-(Project 4 - Orchestration Layer)
-Airflow DAG
-
-                ↓
-
-(Project 1 - Processing Logic)
-Extract → Transform → Load → Summary Output
-```
-
----
-
-# 🔄 Pipeline Flow
+# 📊 Pipeline Flow
 
 ## 1️⃣ Extract
 
-* Reads raw data from CSV
-* Converts to Parquet format
-* Handles encoding fallback
+- Reads staging data from local / S3
+- Handles encoding issues & schema normalization
+- Outputs clean intermediate dataset
 
 ---
 
 ## 2️⃣ Transform
 
-* Parses and validates date columns
-* Handles invalid values using coercion
-* Aggregates:
-
-  * Total sales by category
-  * Order count by category
+- Validates timestamps
+- Handles null / invalid values
+- Aggregates business metrics:
+  - Total sales
+  - Sales by category
+  - Profit insights
 
 ---
 
 ## 3️⃣ Load
 
-* Writes aggregated results to CSV
-* Outputs final dataset for downstream usage
+- Writes transformed data to S3 (silver / gold)
+- Loads analytics-ready data into Redshift
+
+![Redshift](assets/airflow_redshift_pipeline.png)
 
 ---
 
-# 📊 DAG Structure
+# 🧩 DAG Structure
 
-```text
-extract_sales_data
+```
+extract_staging_sales
         ↓
-transform_sales_data
+transform_staging_sales
         ↓
-load_sales_summary
+load_staging_sales_summary
 ```
 
-Airflow manages task dependencies and execution order.
+---
+
+# ⚙️ Airflow Execution
+
+## ✅ Successful DAG Run
+
+![DAG Success](assets/airflow_dag_success.png)
 
 ---
 
-# 🔁 Fault Tolerance
+## 📜 Logs & Debugging
 
-This pipeline includes:
-
-* Retry mechanism for failed tasks
-* Graceful error handling
-* Idempotent processing design
-
-Example:
-
-* Temporary failure → automatic retry
-* Persistent failure → alert triggered
+![Logs](assets/airflow_dag_logs.png)
 
 ---
 
-# 🚨 Alerting System
+# 🚨 Alerting System (Telegram)
 
-Integrated Slack alerting using Airflow callbacks.
+## ✅ Success Alert
 
-### On Failure
+![Success Alert](assets/airflow_alert_success.png)
 
-```text
-❌ FAILURE: Task transform_sales_data in DAG sales_etl_pipeline failed
+## ❌ Failure Alert
+
+![Failure Alert](assets/airflow_alert_failure.png)
+
+---
+
+# 🔁 Reliability & Fault Tolerance
+
+- Retry mechanism for transient failures
+- Task-level failure isolation
+- Clear observability via logs and UI
+- Alerting on both success & failure
+
+---
+
+# ☁️ Data Lake (AWS S3)
+
+```
+s3://sales-analytics-lakehouse-thana/
+
+├── raw/
+├── silver/
+└── gold/
 ```
 
-### On Success
-
-```text
-✅ SUCCESS: DAG sales_etl_pipeline completed
-```
-
-This enables **real-time monitoring of pipeline health**.
-
 ---
 
-# 📊 Observability
-
-The system provides visibility through:
-
-* Airflow logs
-* Task-level execution history
-* Slack alerts
-* Structured print/log messages
-
-This simulates production monitoring without external tools.
-
----
-
-# 🐳 Running the Pipeline
-
-Start services:
+# 🐳 Running the Project
 
 ```bash
 docker compose up -d
 ```
 
-Access Airflow UI:
-
-```
+Airflow UI:
 http://localhost:8080
-```
-
-Trigger DAG manually via UI.
 
 ---
 
-# 📐 Key Design Decisions
+# 🧠 Key Concepts Demonstrated
 
-* Modular ETL scripts for separation of concerns
-* Airflow used as orchestration layer only
-* Slack used for lightweight alerting
-* Parquet used as intermediate storage format
-* Docker ensures environment consistency
-
----
-
-# 🔮 Future Improvements
-
-* Replace local storage with data warehouse (BigQuery / Snowflake)
-* Add data validation framework (Great Expectations)
-* Integrate Prometheus & Grafana
-* Add CI/CD pipeline
-* Deploy to cloud (AWS / GCP)
+- Airflow DAG orchestration
+- Medallion architecture
+- ETL modular design
+- Cloud data lake integration
+- Observability & alerting
+- Production-style pipeline design
 
 ---
 
 # 🏁 Portfolio Context
 
-Part of a **Data Engineering learning portfolio**:
+| Project | Description |
+|--------|------------|
+| Project 1 | Batch ETL |
+| Project 2 | FastAPI Analytics |
+| Project 3 | Kafka Streaming |
+| Project 4 | Airflow Orchestration |
 
-```text
-Project 1 → Batch ETL
-Project 2 → Analytics API
-Project 3 → Streaming Pipeline (Kafka) :contentReference[oaicite:0]{index=0}
-Project 4 → Orchestration (Airflow)
-Project 5 → Cloud Deployment (future)
-```
+---
 
-This project demonstrates **workflow orchestration and production-style pipeline design**.
+# 💡 Key Takeaway
+
+This project demonstrates how to:
+
+- Build reliable and maintainable ETL pipelines  
+- Orchestrate workflows using Airflow  
+- Integrate with cloud storage and data warehouses  
+- Handle failures with retries and alerting  
+- Design systems with production-level observability  
