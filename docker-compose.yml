@@ -39,11 +39,10 @@ services:
     volumes: &airflow-common-volumes
       - ./dags:/opt/airflow/dags
       - ./scripts:/opt/airflow/scripts
-      - ./data:/opt/airflow/data
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - /home/ubuntu/project3_streaming/output/staging:/opt/airflow/staging
       - ~/.aws:/home/airflow/.aws
+      - E:/dev/project3_streaming/output/staging:/opt/airflow/staging
     command: >
       bash -c "
       airflow db migrate &&
