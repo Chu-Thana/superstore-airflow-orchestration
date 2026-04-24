@@ -1,178 +1,176 @@
-# 🛠 Airflow ETL Orchestration Pipeline
+# 🛠 Airflow Data Pipeline Orchestration (Project 4)
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![Airflow](https://img.shields.io/badge/Orchestration-Airflow-orange)
-![Docker](https://img.shields.io/badge/Container-Docker-blue)
-![AWS](https://img.shields.io/badge/Storage-S3-yellow)
-![Alerting](https://img.shields.io/badge/Alert-Telegram-green)
+![AWS](https://img.shields.io/badge/Data_Lake-S3-yellow)
+![Warehouse](https://img.shields.io/badge/Warehouse-Redshift-red)
+![Alert](https://img.shields.io/badge/Alert-Telegram-green)
 
-Production-style **end-to-end data pipeline orchestration** using Apache Airflow with AWS S3, Redshift, and real-time alerting.
-
----
-
-# 🚀 Overview
-
-This project demonstrates a **production-grade Airflow pipeline** orchestrating ETL workflows on top of a modern data lake architecture.
+Production-style **data pipeline orchestration** using Apache Airflow, integrating streaming data (Kafka) with batch processing and cloud warehouse.
 
 ---
 
-## 🔑 Highlights
+# 📸 System Overview
 
-- End-to-end ETL orchestration using Airflow DAGs  
-- Medallion architecture (raw → silver → gold)  
-- AWS S3 + Redshift integration  
-- Fault-tolerant pipeline with retries  
-- Real-time alerting via Telegram  
-- Business event monitoring from streaming data  
-- Full observability (logs + DAG monitoring)
-
----
-
-# 🧠 Architecture
-
-![Data Lake](assets/airflow_s3_lakehouse.png)
-
-```
 Kafka (Project 3)
       ↓
-S3 (raw)
+Staging (JSONL / S3)
       ↓
 Airflow DAG (Project 4)
       ↓
-ETL Processing
+ETL (Deduplication + Transform)
       ↓
 S3 (silver / gold)
       ↓
 Redshift (analytics-ready)
-```
 
 ---
 
-# 📊 Pipeline Flow
+# 🏗 Architecture Overview
+
+```mermaid
+flowchart LR
+
+subgraph Batch
+    RawData --> S3Raw --> AirflowBatch
+    AirflowBatch --> ETLBatch
+end
+
+subgraph Streaming
+    Producer --> Kafka --> Consumer --> Staging
+    Staging --> AirflowStream
+end
+
+subgraph Processing
+    AirflowBatch --> TransformBatch
+    AirflowStream --> TransformStream
+end
+
+subgraph Storage
+    TransformBatch --> S3Silver
+    TransformStream --> S3Silver
+    S3Silver --> S3Gold
+    S3Gold --> Redshift
+end
+
+subgraph Serving
+    Redshift --> API --> Client
+end
+```
+
+> This architecture integrates both batch and streaming pipelines.
+> 
+> - Batch pipeline handles historical data ingestion into S3
+> - Batch and streaming data are unified at the transformation layer before loading into warehouse
+> - Streaming pipeline processes real-time events via Kafka
+> - Airflow orchestrates both pipelines and enables downstream data consistency
+> - Final outputs are stored in Redshift for analytics and serving
+
+---
+
+# 🔥 Key Idea
+
+- Project 3 (Kafka) → At-least-once delivery (no data loss, duplicates allowed)
+- Project 4 (Airflow) → Deduplication + data correctness
+
+---
+
+# ⚙️ Pipeline Flow
 
 ## 1️⃣ Extract
-- Reads staging data from local / S3  
-- Handles encoding issues & schema normalization  
-- Outputs clean intermediate dataset  
+- Read staging data from Kafka consumer
+- Normalize schema
 
 ## 2️⃣ Transform
-- Validates timestamps  
-- Handles null / invalid values  
-- Aggregates business metrics (sales, profit, category insights)  
+- Clean invalid values
+- Deduplicate events
+- Aggregate metrics
 
 ## 3️⃣ Load
-- Writes transformed data to S3 (silver / gold)  
-- Loads analytics-ready data into Redshift  
-
-![Redshift](assets/airflow_redshift_pipeline.png)
+- Write to S3 (silver / gold)
+- Load into Redshift
 
 ---
 
 # 🧩 DAG Structure
 
-```
 extract_staging_sales
         ↓
 transform_staging_sales
         ↓
 load_staging_sales_summary
-```
 
 ---
 
-# ⚙️ Airflow Execution
+# 🔁 Deduplication Strategy
 
-## ✅ Successful DAG Run
-![DAG Success](assets/airflow_dag_success.png)
+To support at-least-once delivery from Kafka:
 
-## 📜 Logs & Debugging
-![Logs](assets/airflow_dag_logs.png)
+- Duplicates may occur due to offset reprocessing
+- Deduplication is handled in Airflow (downstream)
 
----
+Approach:
+- Use event_id as unique key
+- Remove duplicates during transformation step
 
-# 🚨 Production Alerts & Observability
-
-## ❌ Failure Detection (Airflow)
-
-![Failure Alert](assets/airflow_alert_failure.png)
-
-## ✅ Success Notification
-
-![Success Alert](assets/airflow_alert_success.png)
+👉 Ensures:
+- No data loss (streaming layer)
+- Clean data (warehouse layer)
 
 ---
 
-# 📊 Business Event Alerts (Streaming)
+# 🛠 Debug & Recovery Strategy
 
-The system also detects **real-time business anomalies** from streaming data:
+- If Airflow task fails:
+  - retry mechanism is configured
+  - logs are used to identify failure
 
-- 🚨 High-value transactions  
-- ⚠️ Risky discount-profit scenarios  
-- 📉 Negative profit events  
+- If data inconsistency occurs:
+  - verify warehouse output
+  - trace back to transformation logic
+  - inspect raw data in S3
 
-![Streaming Alerts](assets/streaming_alert_events.png)
-
-### 🔗 Integration Flow
-
-```
-Kafka → Python Consumer → Rule Detection → Telegram Alerts
-```
+👉 Supports debugging at each layer (raw → silver → gold)
 
 ---
 
-# 🔁 Reliability & Fault Tolerance
+# 📊 Execution Proof
 
-- Retry mechanism for transient failures  
-- Task-level failure isolation  
-- Alerting on both success & failure  
-- End-to-end observability via logs + monitoring  
+## Airflow DAG Orchestration
+![DAG](assets/01_airflow_dag_orchestration.png)
 
----
+## Task Execution Log
+![Logs](assets/02_airflow_task_execution_log.png)
 
-# ☁️ Data Lake (AWS S3)
-
-```
-s3://sales-analytics-lakehouse-thana/
-
-├── raw/
-├── silver/
-└── gold/
-```
+## Real-time Alert Detection
+![Alert](assets/03_streaming_alert_detection.png)
 
 ---
 
-# 🐳 Running the Project
+# 📦 Data Lake Output (S3)
 
-```bash
-docker compose up -d
-```
-
-Airflow UI: http://localhost:8080
+![S3](assets/04_s3_silver_layer_output.png)
 
 ---
 
-# 🧠 Key Concepts Demonstrated
+# 🧠 What This Project Shows
 
-- Airflow DAG orchestration  
-- Medallion architecture  
-- ETL modular design  
-- Streaming + batch integration  
-- Observability & alerting  
-- Production-ready pipeline design  
-
----
-
-# 🏁 Portfolio Context
-
-| Project | Description |
-|--------|------------|
-| Project 1 | Batch ETL |
-| Project 2 | FastAPI Analytics |
-| Project 3 | Kafka Streaming |
-| Project 4 | Airflow Orchestration |
+- Airflow orchestration
+- Streaming → Batch integration
+- At-least-once architecture
+- Deduplication strategy
+- Data lake + warehouse pipeline
+- Alerting system
 
 ---
 
-# 💡 Key Takeaway
+# 📌 Summary
 
-This project demonstrates how to build a **reliable, observable, and production-ready data pipeline**, combining orchestration, storage, streaming, and alerting into a unified system.
+This project demonstrates:
+
+- End-to-end orchestration using Airflow
+- Integration between streaming (Kafka) and batch processing
+- Reliable ingestion (at-least-once) with downstream deduplication
+- Data lake (S3) and warehouse (Redshift) integration
+
+👉 Designed to reflect real-world data engineering workflow and system reliability trade-offs
