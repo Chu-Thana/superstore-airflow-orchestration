@@ -1,176 +1,215 @@
-# 🛠 Airflow Data Pipeline Orchestration (Project 4)
+# 🛠 Airflow Data Pipeline Orchestration
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![Airflow](https://img.shields.io/badge/Orchestration-Airflow-orange)
-![AWS](https://img.shields.io/badge/Data_Lake-S3-yellow)
+![Orchestration](https://img.shields.io/badge/Orchestration-Airflow-orange)
+![Streaming](https://img.shields.io/badge/Streaming-Kafka-purple)
+![Cloud](https://img.shields.io/badge/Cloud-AWS-yellow)
+![Data Lake](https://img.shields.io/badge/Data_Lake-S3-lightgrey)
 ![Warehouse](https://img.shields.io/badge/Warehouse-Redshift-red)
-![Alert](https://img.shields.io/badge/Alert-Telegram-green)
-
-Production-style **data pipeline orchestration** using Apache Airflow, integrating streaming data (Kafka) with batch processing and cloud warehouse.
-
----
-
-# 📸 System Overview
-
-Kafka (Project 3)
-      ↓
-Staging (JSONL / S3)
-      ↓
-Airflow DAG (Project 4)
-      ↓
-ETL (Deduplication + Transform)
-      ↓
-S3 (silver / gold)
-      ↓
-Redshift (analytics-ready)
+![Query](https://img.shields.io/badge/Query-Athena-blue)
+![Format](https://img.shields.io/badge/Format-JSONL-lightgrey)
+![Container](https://img.shields.io/badge/Container-Docker-blue)
 
 ---
 
-# 🏗 Architecture Overview
+## 📌 Summary
+
+This project implements a **production-style data pipeline orchestration system** using Apache Airflow.
+
+It focuses on:
+
+* integrating streaming (Kafka) and batch pipelines
+* ensuring data correctness via downstream deduplication
+* orchestrating ETL workflows across multiple layers
+* transforming raw events into analytics-ready datasets
+
+👉 Designed to simulate a **real-world data platform orchestration layer connecting batch, streaming, and serving systems**
+
+---
+
+## 🔗 Integration with Data Platform
+
+This project sits at the **center of the data platform**:
+
+- Project 1 → batch ETL and data modeling (analytics-ready datasets)
+- Project 2 → API serving layer for data consumption
+- Project 3 → real-time streaming ingestion (Kafka)
+- Project 4 → orchestration, transformation, and deduplication (this project)
+- Project 5 → cloud storage and warehouse (S3 / Redshift / Athena)
+
+👉 Airflow acts as the **central orchestration layer connecting all components**
+
+---
+
+## 🔄 Data Flow
+
+Kafka → Staging → Airflow → Transform / Dedup → S3 Silver/Gold → Redshift / Athena → API / BI
+
+---
+
+## 🏗 Architecture Overview
 
 ```mermaid
 flowchart LR
 
-subgraph Batch
-    RawData --> S3Raw --> AirflowBatch
-    AirflowBatch --> ETLBatch
+subgraph Batch["Batch Pipeline"]
+    CSV["CSV Source"] --> S3Raw["S3 Raw"]
+    S3Raw --> AirflowBatch["Airflow Batch"]
+    AirflowBatch --> BatchTransform["Transform / Validate"]
 end
 
-subgraph Streaming
-    Producer --> Kafka --> Consumer --> Staging
-    Staging --> AirflowStream
+subgraph Streaming["Streaming Pipeline"]
+    Producer["Producer"] --> Kafka["Kafka"]
+    Kafka --> Consumer["Consumer"]
+    Consumer --> Staging["Staging"]
+    Staging --> AirflowStream["Airflow Stream"]
+    AirflowStream --> StreamTransform["Transform / Dedup"]
 end
 
-subgraph Processing
-    AirflowBatch --> TransformBatch
-    AirflowStream --> TransformStream
+subgraph Storage["Storage Layer"]
+    BatchTransform --> Silver["S3 Silver"]
+    StreamTransform --> Silver
+    Silver --> Gold["S3 Gold"]
+    Gold --> Redshift["Redshift"]
 end
 
-subgraph Storage
-    TransformBatch --> S3Silver
-    TransformStream --> S3Silver
-    S3Silver --> S3Gold
-    S3Gold --> Redshift
-end
-
-subgraph Serving
-    Redshift --> API --> Client
+subgraph Serving["Serving Layer"]
+    Redshift --> API["API"]
+    Redshift --> BI["BI / Analytics"]
 end
 ```
 
-> This architecture integrates both batch and streaming pipelines.
-> 
-> - Batch pipeline handles historical data ingestion into S3
-> - Batch and streaming data are unified at the transformation layer before loading into warehouse
-> - Streaming pipeline processes real-time events via Kafka
-> - Airflow orchestrates both pipelines and enables downstream data consistency
-> - Final outputs are stored in Redshift for analytics and serving
+👉 Batch + Streaming pipelines are unified into a single data model
 
 ---
 
-# 🔥 Key Idea
+## ⚙️ Pipeline Flow
 
-- Project 3 (Kafka) → At-least-once delivery (no data loss, duplicates allowed)
-- Project 4 (Airflow) → Deduplication + data correctness
+### 1️⃣ Extract (Staging Layer)
+- Airflow reads streaming output from Kafka staging (JSONL / S3)
+- Batch data is ingested from raw layer
+- Schema is validated and normalized
 
----
+### 2️⃣ Transform (Processing Layer)
+- Airflow executes modular DAG tasks
+- Data is cleaned and validated
+- Deduplication is applied (downstream of Kafka at-least-once delivery)
+- Business logic and aggregations are applied
 
-# ⚙️ Pipeline Flow
-
-## 1️⃣ Extract
-- Read staging data from Kafka consumer
-- Normalize schema
-
-## 2️⃣ Transform
-- Clean invalid values
-- Deduplicate events
-- Aggregate metrics
-
-## 3️⃣ Load
-- Write to S3 (silver / gold)
-- Load into Redshift
+### 3️⃣ Load (Storage & Serving Layer)
+- Cleaned data is written to S3 Silver layer
+- Aggregated data is promoted to S3 Gold layer
+- Final datasets are loaded into Redshift for analytics
 
 ---
 
-# 🧩 DAG Structure
+## 🧩 DAG Structure
 
-extract_staging_sales
-        ↓
-transform_staging_sales
-        ↓
-load_staging_sales_summary
+This project contains multiple Airflow DAGs for different orchestration use cases:
 
----
+- `project1_etl_runner.py` → orchestrates the original batch ETL workflow
+- `sales_etl_pipeline.py` → runs sales ETL processing tasks
+- `streaming_staging_pipeline.py` → processes Kafka staging data with downstream transformation and deduplication
+- `redshift_mart_pipeline.py` → builds / updates Redshift mart tables for analytics
 
-# 🔁 Deduplication Strategy
-
-To support at-least-once delivery from Kafka:
-
-- Duplicates may occur due to offset reprocessing
-- Deduplication is handled in Airflow (downstream)
-
-Approach:
-- Use event_id as unique key
-- Remove duplicates during transformation step
-
-👉 Ensures:
-- No data loss (streaming layer)
-- Clean data (warehouse layer)
+👉 These DAGs show that Airflow is used as a central orchestration layer, not just a single-task scheduler.
 
 ---
 
-# 🛠 Debug & Recovery Strategy
+## 🔁 Deduplication Strategy
 
-- If Airflow task fails:
-  - retry mechanism is configured
-  - logs are used to identify failure
+This system follows an **at-least-once delivery model**:
 
-- If data inconsistency occurs:
-  - verify warehouse output
-  - trace back to transformation logic
-  - inspect raw data in S3
+- Kafka ensures no data loss
+- Duplicate events may occur due to reprocessing or consumer retries
 
-👉 Supports debugging at each layer (raw → silver → gold)
+### Design Decision
+
+Deduplication is intentionally handled **downstream in Airflow**, not in the consumer layer.
+
+👉 Reason:
+
+- Avoids data loss in case of consumer failure
+- Keeps the streaming layer lightweight and stateless
+- Ensures correctness is enforced in a controlled batch processing environment
+
+### Approach
+
+- Use `event_id` as a unique identifier
+- Deduplicate records during transformation (Airflow DAG)
+
+### Guarantees
+
+- No data loss (streaming ingestion layer)
+- Data correctness (processing / warehouse layer)
+
+👉 This reflects a real-world trade-off:  
+**reliability first → correctness enforced downstream**
 
 ---
 
-# 📊 Execution Proof
+## ⚡ Scalability Design
 
-## Airflow DAG Orchestration
+- Airflow breaks workflows into modular DAG tasks, enabling parallel execution  
+- Batch and streaming pipelines scale independently without coupling  
+- S3 acts as a decoupled storage layer (compute vs storage separation)  
+- Redshift scales analytical workloads independently from ingestion  
+
+👉 This architecture supports **horizontal scaling across ingestion, processing, and serving layers**
+
+---
+
+## 🚨 Reliability & Failure Handling
+
+- Kafka ensures **at-least-once delivery** (no data loss)  
+- Airflow retries failed tasks and manages execution dependencies  
+- Deduplication is handled downstream to resolve duplicate events from streaming ingestion  
+- Data can be rebuilt from raw → silver → gold layers  
+
+👉 This design prioritizes **reliability first, correctness enforced downstream**
+
+---
+
+## 📸 Execution Proof
+
+### Airflow DAG
+
 ![DAG](assets/01_airflow_dag_orchestration.png)
 
-## Task Execution Log
+### Task Logs
+
 ![Logs](assets/02_airflow_task_execution_log.png)
 
-## Real-time Alert Detection
+### Streaming Alert
+
 ![Alert](assets/03_streaming_alert_detection.png)
 
----
-
-# 📦 Data Lake Output (S3)
+### S3 Output
 
 ![S3](assets/04_s3_silver_layer_output.png)
 
 ---
 
-# 🧠 What This Project Shows
+## 🧠 What This Project Demonstrates
 
-- Airflow orchestration
-- Streaming → Batch integration
-- At-least-once architecture
-- Deduplication strategy
-- Data lake + warehouse pipeline
-- Alerting system
+This project demonstrates the design of a **production-style data orchestration system**:
+
+- Orchestrating multi-layer data pipelines using Airflow  
+- Integrating streaming (Kafka) and batch processing workflows  
+- Handling at-least-once ingestion with downstream deduplication  
+- Building a unified data pipeline across data lake and warehouse layers  
+
+👉 More importantly, it reflects **system-level thinking in real-world data platforms**
 
 ---
 
-# 📌 Summary
+## 💡 Key Takeaway
 
-This project demonstrates:
+This project demonstrates how to design a **real-world data orchestration system**:
 
-- End-to-end orchestration using Airflow
-- Integration between streaming (Kafka) and batch processing
-- Reliable ingestion (at-least-once) with downstream deduplication
-- Data lake (S3) and warehouse (Redshift) integration
+- Airflow as a central orchestration layer  
+- Decoupled ingestion, processing, and storage layers  
+- Reliability-first architecture with downstream data correction  
+- End-to-end transformation into analytics-ready datasets  
 
-👉 Designed to reflect real-world data engineering workflow and system reliability trade-offs
+👉 Not just orchestration — but a **complete, scalable data platform design**
