@@ -43,6 +43,7 @@ services:
       - ./plugins:/opt/airflow/plugins
       - ~/.aws:/home/airflow/.aws
       - E:/dev/project3_streaming/output/staging:/opt/airflow/staging
+      - ./data:/opt/airflow/data
     command: >
       bash -c "
       airflow db migrate &&

@@ -1,0 +1,16 @@
+{
+  "dag_count": 4,
+  "task_count": 11,
+  "validation_runs_total": 12,
+  "validation_runs_success": 12,
+  "validation_runs_failed": 0,
+  "validation_success_rate_pct": 100.0,
+  "tasks_with_retries": 3,
+  "retry_count": 2,
+  "failure_alert_enabled": true,
+  "success_alert_enabled": true,
+  "manual_steps_before": 11,
+  "manual_steps_after": 4,
+  "manual_execution_reduction_pct": 63.64,
+  "note": "Metrics collected from local Airflow validation runs across batch, streaming staging, and Redshift mart DAGs."
+}
