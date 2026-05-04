@@ -14,25 +14,23 @@
 
 ## 📌 Summary
 
-This project implements a **production-style data orchestration system** using Apache Airflow, integrating both batch and real-time streaming pipelines.
+Production-style data orchestration system using Apache Airflow to unify batch and streaming pipelines.
 
-It demonstrates:
+- Orchestrates end-to-end workflows across ingestion → transformation → serving  
+- Ensures reliability with retries, monitoring, and alerting  
+- Handles at-least-once streaming with downstream deduplication  
 
-- end-to-end orchestration across ingestion, transformation, and serving layers  
-- reliable data processing with retry, monitoring, and alerting mechanisms  
-- downstream deduplication to ensure correctness under at-least-once delivery  
-
-👉 Designed to simulate a **real-world data platform where Airflow acts as the central control layer**
+👉 Airflow acts as the **central control layer of a modern data platform**
 
 ---
 
 ## 📊 Orchestration Metrics
 
-- Orchestrated **4 Airflow DAGs (11+ tasks)** across batch and streaming pipelines  
-- Achieved **100% success rate across validation runs** with retry and alerting mechanisms  
-- Implemented **automatic retry handling (3 tasks, 2 retries)** to recover from transient failures  
-- Enabled **real-time success and failure alerts** for pipeline observability  
-- Reduced manual pipeline execution by **~64% (11 → 4 steps)** through automation  
+- Orchestrated **4 production-style DAGs (11+ tasks)** across batch and streaming pipelines  
+- Achieved **100% successful pipeline runs** with retry and alerting mechanisms  
+- Implemented **automatic retry recovery (3 tasks, 2 retries)** for fault tolerance  
+- Enabled **real-time alerting (success + failure)** for full observability  
+- Reduced manual pipeline execution by **~64% (11 → 4 steps)** via automation  
 
 👉 Metrics collected from controlled validation runs simulating production scenarios
 
@@ -56,7 +54,7 @@ This project sits at the **center of the data platform**:
 
 Kafka → Staging → Airflow Orchestration → Transform / Dedup → S3 (Silver/Gold) → Redshift / Athena → API / BI
 
-👉 End-to-end pipeline integrating real-time and batch processing into a unified data model
+👉 End-to-end **data pipeline orchestration with unified batch + streaming architecture**
 
 ---
 
@@ -162,6 +160,7 @@ Deduplication is intentionally handled **downstream in Airflow**, not in the con
 
 👉 This reflects a real-world trade-off:  
 **reliability first → correctness enforced downstream**
+👉 This design prioritizes **data reliability over processing simplicity**, a common pattern in real-world data platforms
 
 ---
 
@@ -183,7 +182,7 @@ Deduplication is intentionally handled **downstream in Airflow**, not in the con
 - Downstream deduplication guarantees data correctness despite duplicate events  
 - Pipelines are **fully recoverable** from raw → silver → gold layers  
 
-👉 Designed with **production-grade reliability, fault tolerance, and observability**
+👉 Designed with **production-grade reliability, fault tolerance, and observability principles**
 
 ---
 
@@ -207,30 +206,32 @@ Deduplication is intentionally handled **downstream in Airflow**, not in the con
 ### 6️⃣ Pipeline Metrics Summary
 ![Metrics](assets/06_pipeline_metrics_summary.png)
 
-Pipeline reliability and automation metrics collected from Airflow validation runs
+Pipeline reliability and automation metrics collected from Airflow validation runs  
+Demonstrates system stability, retry handling, and monitoring capabilities
+- 4 DAGs, 11+ tasks orchestrated across batch and streaming pipelines  
+- 100% validation success rate with retry and alerting  
+- ~64% reduction in manual execution steps via automation  
 
 ---
 
 ## 🧠 What This Project Demonstrates
 
-This project demonstrates **production-level data engineering practices**:
+- Designing **production-ready orchestration systems** using Airflow  
+- Integrating **batch and real-time streaming pipelines** into a unified architecture  
+- Building systems with **fault tolerance, observability, and automated recovery**  
+- Applying **real-world data engineering patterns (at-least-once + downstream correction)**  
 
-- Orchestrating complex multi-layer pipelines using Airflow  
-- Integrating batch and real-time streaming data workflows  
-- Designing for **reliability, fault tolerance, and observability**  
-- Enforcing data correctness via downstream validation and deduplication  
-
-👉 Represents **end-to-end system design and production mindset**, not isolated tools
+👉 Demonstrates **end-to-end system thinking**, not just tool usage
 
 ---
 
 ## 💡 Key Takeaway
 
-This project showcases how to build a **real-world data orchestration system**:
+This project demonstrates how to design a **production-grade orchestration system**:
 
-- Centralized orchestration using Airflow  
-- Decoupled and scalable data architecture  
+- Centralized control using Airflow  
+- Decoupled, scalable data architecture  
 - Reliability-first design with downstream correction  
-- Measurable improvements via automation and monitoring  
+- Measurable impact through automation and monitoring  
 
-👉 Not just a pipeline — but a **production-ready data platform architecture**
+👉 Shows the ability to build **real-world data platforms**, not just pipelines
