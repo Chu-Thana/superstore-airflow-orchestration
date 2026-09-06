@@ -313,14 +313,14 @@ with DAG(
         python_callable=redshift_create_batch_analytics_views,
     )
 
-    batch_cross_layer_validation_task = PythonOperator(
-        task_id="validate_batch_cross_layer",
-        python_callable=run_batch_cross_layer_validation,
-    )
-
     redshift_validate_batch_analytics_task = PythonOperator(
         task_id="redshift_validate_batch_analytics",
         python_callable=redshift_validate_batch_analytics,
+    )
+
+    batch_cross_layer_validation_task = PythonOperator(
+        task_id="validate_batch_cross_layer",
+        python_callable=run_batch_cross_layer_validation,
     )
 
     end = EmptyOperator(task_id="end")
