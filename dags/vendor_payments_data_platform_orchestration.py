@@ -584,6 +584,16 @@ with DAG(
         task_id="start"
     )
 
+    check_batch_pipeline_status_task = PythonOperator(
+        task_id="check_batch_pipeline_status",
+        python_callable=check_batch_pipeline_status,
+    )
+
+    check_streaming_pipeline_status_task = PythonOperator(
+        task_id="check_streaming_pipeline_status",
+        python_callable=check_streaming_pipeline_status,
+    )
+
     check_cloud_platform_ready_task = PythonOperator(
         task_id="check_cloud_platform_ready",
         python_callable=check_cloud_platform_ready,
@@ -602,16 +612,6 @@ with DAG(
     generate_orchestration_summary_task = PythonOperator(
         task_id="generate_orchestration_summary",
         python_callable=generate_orchestration_summary,
-    )
-
-    check_batch_pipeline_status_task = PythonOperator(
-        task_id="check_batch_pipeline_status",
-        python_callable=check_batch_pipeline_status,
-    )
-
-    check_streaming_pipeline_status_task = PythonOperator(
-        task_id="check_streaming_pipeline_status",
-        python_callable=check_streaming_pipeline_status,
     )
 
     end = EmptyOperator(
